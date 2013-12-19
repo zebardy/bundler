@@ -3,6 +3,8 @@ require 'rubygems'
 require 'rubygems/user_interaction'
 require 'rubygems/config_file'
 
+Gem.load_env_plugins if Gem.respond_to?(:load_env_plugins)
+
 module Bundler
   class RubygemsIntegration
 
