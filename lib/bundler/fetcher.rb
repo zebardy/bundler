@@ -86,12 +86,21 @@ module Bundler
       Socket.do_not_reverse_lookup = true
     end
 
+    def ssl_client_cert
+      if Bundler.settings[:ssl_client_cert]
+        return Bundler.settings[:ssl_client_cert]
+      elsif Bundler.rubygems.configuration.method_defined? :ssl_client_cert
+        return Bundler.rubygems.configuration.ssl_client_cert
+      end
+      return nil
+    end
+
     def connection
       return @connection if @connection
 
       needs_ssl = @remote_uri.scheme == "https" ||
         Bundler.settings[:ssl_verify_mode] ||
-        Bundler.settings[:ssl_client_cert]
+        self.ssl_client_cert
       raise SSLError if needs_ssl && !defined?(OpenSSL)
 
       @connection = Net::HTTP::Persistent.new 'bundler', :ENV
@@ -102,8 +111,8 @@ module Bundler
         @connection.cert_store = bundler_cert_store
       end
 
-      if Bundler.settings[:ssl_client_cert]
-        pem = File.read(Bundler.settings[:ssl_client_cert])
+      if self.ssl_client_cert
+        pem = File.read(self.ssl_client_cert)
         @connection.cert = OpenSSL::X509::Certificate.new(pem)
         @connection.key  = OpenSSL::PKey::RSA.new(pem)
       end
